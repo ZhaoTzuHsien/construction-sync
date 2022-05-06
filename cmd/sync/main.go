@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"github.com/ZhaoTzuHsien/construction-sync/internal/app/sync"
 )
 
 func main() {
-	dir, _ := os.UserConfigDir()
-	fmt.Println(dir)
+	sync.Start()
 }
