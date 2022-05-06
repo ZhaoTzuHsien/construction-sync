@@ -2,7 +2,6 @@ package sync
 
 import (
 	"fmt"
-	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/badger"
 	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/config"
 	"github.com/spf13/viper"
 	"path/filepath"
@@ -13,19 +12,14 @@ import (
 func Start() {
 	config.LoadConfig()
 
-	// Open badger database
-	db := badger.Open()
-	defer db.Close()
-
 	sourceDirs, err := getSourceDirs()
 	if err != nil {
 		panic("glob 格是錯誤")
 	}
 
 	srcDestMap := createSrcDestMap(sourceDirs)
-	for k, v := range srcDestMap {
-		fmt.Println(k + "\n-> " + v)
-	}
+
+	copyFiles(srcDestMap)
 }
 
 func getSourceDirs() ([]string, error) {
