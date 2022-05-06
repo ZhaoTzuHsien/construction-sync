@@ -1,14 +1,14 @@
 package config
 
 import (
-	"fmt"
 	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/constant"
 	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-func init() {
+func LoadConfig() {
 	// Define config paths
 	var configs []string
 	if workDir, err := os.Getwd(); err == nil {
@@ -35,10 +35,30 @@ func init() {
 	// If config is not found, ask user to add config.yaml to valid config path
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("找不到設定檔，請確認 config.yaml 是否存在於以下資料夾：")
+			var errorMsg string
+			errorMsg += "找不到設定檔，請確認 config.yaml 是否存在於以下資料夾："
 			for _, v := range configs {
-				fmt.Printf(" - %s\n", v)
+				errorMsg += "\n - " + v
 			}
+			panic(errorMsg)
 		}
 	}
+
+	// validate config
+	notFoundKeys := validate([]string{"source.path", "source.glob", "destination.path"})
+	if len(notFoundKeys) > 0 {
+		panic("無法在 config.yaml 中找到 " + strings.Join(notFoundKeys, ", "))
+	}
+}
+
+func validate(keys []string) []string {
+	var notFoundKeys []string
+
+	for _, v := range keys {
+		if !viper.IsSet(v) {
+			notFoundKeys = append(notFoundKeys, v)
+		}
+	}
+
+	return notFoundKeys
 }
