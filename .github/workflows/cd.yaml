@@ -1,0 +1,27 @@
+name: CD
+on:
+  release:
+    types:
+      - published
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18.1
+      - name: Build
+        run: go build -ldflags "-s -w" github.com/ZhaoTzuHsien/construction-sync/cmd/sync
+      - name: Upload executables to GitHub release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./sync.exe
+          asset_name: sync.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
