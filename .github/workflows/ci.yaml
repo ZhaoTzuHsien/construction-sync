@@ -5,7 +5,10 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -15,8 +18,8 @@ jobs:
           go-version: 1.18.1
       - name: Build
         run: go build github.com/ZhaoTzuHsien/construction-sync/cmd/sync
-      - uses: actions/upload-artifact@v3
-        name: Save userscript as artifact
+      - name: Save executables as artifact
+        uses: actions/upload-artifact@v3
         with:
           name: sync
-          path: sync.exe
+          path: sync*
