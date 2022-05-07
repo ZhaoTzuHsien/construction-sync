@@ -7,12 +7,18 @@ import (
 	"sync"
 )
 
-func discoverFiles(srcDestMap map[string]string, channel chan<- [2]string, errorChannel chan<- error) {
+func discoverFiles(srcDestMap map[string]string, channel chan<- [2]string, progressChannel chan<- Progress, errorChannel chan<- error) {
 	var wg sync.WaitGroup
 	wg.Add(len(srcDestMap))
 	for k, v := range srcDestMap {
+		progressChannel <- Progress{task: "discover", action: "start"}
+
 		go func(source, dest string) {
-			defer wg.Done()
+			defer func() {
+				wg.Done()
+				progressChannel <- Progress{task: "discover", action: "finish"}
+			}()
+
 			pairs, err := listDir(source, dest)
 			if err == nil {
 				for _, pair := range pairs {

@@ -8,6 +8,11 @@ import (
 	"sync"
 )
 
+type Progress struct {
+	task   string
+	action string
+}
+
 func Start() {
 	// Error handling
 	defer func() {
@@ -29,13 +34,14 @@ func Start() {
 	log.Success.Println("搜尋資料夾，將從以下路徑搜尋檔案：\n - " + strings.Join(sourceDirs, "\n - "))
 
 	// Create channels for discover, hash and copy tasks
-	hashChannel := make(chan [2]string, 10)
-	copyChannel := make(chan [2]string, 10)
+	hashChannel := make(chan [2]string, 100)
+	copyChannel := make(chan [2]string, 100)
+	progressChannel := make(chan Progress, 100*2*3)
 	errorChannel := make(chan error)
 	done := make(chan struct{})
 
 	// Discover files
-	discoverFiles(srcDestMap, hashChannel, errorChannel)
+	discoverFiles(srcDestMap, hashChannel, progressChannel, errorChannel)
 
 	// Handle hashChannel, copyChannel and errorChannel as pipeline
 	var wgCheckHash sync.WaitGroup
@@ -63,9 +69,14 @@ func Start() {
 			After that, mark the goroutine done.
 			*/
 			wgCheckHash.Add(1)
+			progressChannel <- Progress{task: "hash", action: "start"}
 
 			go func() {
-				defer wgCheckHash.Done()
+				defer func() {
+					wgCheckHash.Done()
+					progressChannel <- Progress{task: "hash", action: "finish"}
+				}()
+
 				if same := isSameFile(hashPair[0], hashPair[1]); !same {
 					copyChannel <- hashPair
 				}
@@ -92,14 +103,21 @@ func Start() {
 			After that, mark the goroutine done.
 			*/
 			wgCopyFile.Add(1)
+			progressChannel <- Progress{task: "copy", action: "start"}
 
 			go func() {
-				defer wgCopyFile.Done()
+				defer func() {
+					wgCopyFile.Done()
+					progressChannel <- Progress{task: "copy", action: "finish"}
+				}()
 				err := copy(copyPair[0], copyPair[1])
 				if err != nil {
 					errorChannel <- err
 				}
 			}()
+		// Listen to progress channel and update progress
+		case progress := <-progressChannel:
+			log.Success.Println(progress)
 		// Listen to errorChannel and log fatal error content
 		case err := <-errorChannel:
 			log.Fatal.Fatalln(err)
