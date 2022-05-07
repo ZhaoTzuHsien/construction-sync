@@ -1,17 +1,26 @@
 package sync
 
 import (
+	"errors"
 	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/config"
 	"log"
 	"sync"
 )
 
 func Start() {
+	// Error handling
+	defer func() {
+		err := recover()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
 	config.LoadConfig()
 
 	sourceDirs, err := getSourceDirs()
 	if err != nil {
-		panic("glob 格式錯誤")
+		panic(errors.New("source.glob 格式錯誤，請參閱以下網址修正\nhttps://en.wikipedia.org/wiki/Glob_(programming)#Syntax"))
 	}
 
 	srcDestMap := createSrcDestMap(sourceDirs)
@@ -83,14 +92,14 @@ func Start() {
 
 			go func() {
 				defer wgCopyFile.Done()
-				err := Copy(copyPair[0], copyPair[1])
+				err := copy(copyPair[0], copyPair[1])
 				if err != nil {
 					errorChannel <- err
 				}
 			}()
 		// Listen to errorChannel and log fatal error content
 		case err := <-errorChannel:
-			log.Fatalln(err.Error())
+			log.Fatalln(err)
 		// Exit function if both check hash and copy file tasks done
 		case <-done:
 			return

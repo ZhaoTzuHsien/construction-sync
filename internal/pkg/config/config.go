@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/constant"
 	"github.com/spf13/viper"
 	"os"
@@ -40,14 +41,17 @@ func LoadConfig() {
 			for _, v := range configs {
 				errorMsg += "\n - " + v
 			}
-			panic(errorMsg)
+			errorMsg += "\n\n" +
+				"如果你是首次使用本程式，請在上述任意位置新增 config.yaml，並參考以下連結內容，依自身需求修改設定檔：\n" +
+				"https://github.com/ZhaoTzuHsien/construction-sync/blob/main/configs/config.yaml"
+			panic(errors.New(errorMsg))
 		}
 	}
 
 	// validate config
 	notFoundKeys := validate([]string{"source.path", "source.glob", "destination.path"})
 	if len(notFoundKeys) > 0 {
-		panic("無法在 config.yaml 中找到 " + strings.Join(notFoundKeys, ", "))
+		panic(errors.New("無法在 config.yaml 中找到 " + strings.Join(notFoundKeys, ", ")))
 	}
 }
 

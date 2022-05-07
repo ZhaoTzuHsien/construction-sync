@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func Copy(src, dst string) error {
+func copy(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return errors.New("無法開啟檔案：" + src)

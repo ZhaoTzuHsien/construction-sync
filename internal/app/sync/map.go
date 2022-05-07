@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/viper"
 	"path/filepath"
@@ -13,7 +14,7 @@ func createSrcDestMap(sourceDirs []string) map[string]string {
 	destPath := viper.GetString("destination.path")
 	absDestPath, err := filepath.Abs(destPath)
 	if err != nil {
-		panic("Cannot get absolute path of destination.path")
+		panic(errors.New("無法將 destination.path 轉換成絕對路徑"))
 	}
 
 	// Create source destination map
@@ -37,6 +38,6 @@ func retrieveNo(dirName string) int {
 	if no, err := strconv.Atoi(noStr); err == nil {
 		return no
 	} else {
-		panic(err)
+		panic(errors.New("無法將編號從 string 轉換成 int"))
 	}
 }

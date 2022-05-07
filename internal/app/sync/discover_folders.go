@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"errors"
 	"github.com/spf13/viper"
 	"path/filepath"
 )
@@ -10,7 +11,7 @@ func getSourceDirs() ([]string, error) {
 	sourcePath := viper.GetString("source.path")
 	absSourcePath, err := filepath.Abs(sourcePath)
 	if err != nil {
-		panic("Cannot get absolute path of source.path.")
+		panic(errors.New("無法將 source.path 轉換成絕對路徑"))
 	}
 
 	// Build absolute glob
