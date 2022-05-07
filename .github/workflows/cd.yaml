@@ -22,6 +22,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./sync.exe
+          asset_path: sync.exe
           asset_name: sync.exe
-          asset_content_type: application/vnd.microsoft.portable-executable
+          asset_content_type: application/octet-stream
