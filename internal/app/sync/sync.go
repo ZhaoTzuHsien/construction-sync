@@ -3,7 +3,8 @@ package sync
 import (
 	"errors"
 	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/config"
-	"log"
+	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/log"
+	"strings"
 	"sync"
 )
 
@@ -12,11 +13,12 @@ func Start() {
 	defer func() {
 		err := recover()
 		if err != nil {
-			log.Fatalln(err)
+			log.Fatal.Fatalln(err)
 		}
 	}()
 
 	config.LoadConfig()
+	log.Success.Println("載入 config.yaml")
 
 	sourceDirs, err := getSourceDirs()
 	if err != nil {
@@ -24,6 +26,7 @@ func Start() {
 	}
 
 	srcDestMap := createSrcDestMap(sourceDirs)
+	log.Success.Println("搜尋資料夾，將從以下路徑搜尋檔案：\n - " + strings.Join(sourceDirs, "\n - "))
 
 	// Create channels for discover, hash and copy tasks
 	hashChannel := make(chan [2]string, 10)
@@ -99,7 +102,7 @@ func Start() {
 			}()
 		// Listen to errorChannel and log fatal error content
 		case err := <-errorChannel:
-			log.Fatalln(err)
+			log.Fatal.Fatalln(err)
 		// Exit function if both check hash and copy file tasks done
 		case <-done:
 			return
