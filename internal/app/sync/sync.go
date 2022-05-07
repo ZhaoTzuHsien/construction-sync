@@ -1,12 +1,9 @@
 package sync
 
 import (
-	"fmt"
 	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/config"
-	"github.com/spf13/viper"
-	"path/filepath"
-	"strconv"
-	"strings"
+	"log"
+	"sync"
 )
 
 func Start() {
@@ -14,58 +11,89 @@ func Start() {
 
 	sourceDirs, err := getSourceDirs()
 	if err != nil {
-		panic("glob 格是錯誤")
+		panic("glob 格式錯誤")
 	}
 
 	srcDestMap := createSrcDestMap(sourceDirs)
 
-	copyFiles(srcDestMap)
-}
+	// Create channels for discover, hash and copy tasks
+	hashChannel := make(chan [2]string, 10)
+	copyChannel := make(chan [2]string, 10)
+	errorChannel := make(chan error)
+	done := make(chan struct{})
 
-func getSourceDirs() ([]string, error) {
-	// Check if source.path exist and retrieve absolute path
-	sourcePath := viper.GetString("source.path")
-	absSourcePath, err := filepath.Abs(sourcePath)
-	if err != nil {
-		panic("Cannot get absolute path of source.path.")
-	}
+	// Discover files
+	discoverFiles(srcDestMap, hashChannel, errorChannel)
 
-	// Build absolute glob
-	glob := viper.GetString("source.glob")
-	absGlob := filepath.Join(absSourcePath, glob)
+	// Handle hashChannel, copyChannel and errorChannel as pipeline
+	var wgCheckHash sync.WaitGroup
+	var wgCopyFile sync.WaitGroup
+	for {
+		select {
+		case hashPair, ok := <-hashChannel:
+			/**
+			If hasChannel is closed, prevent this case from executing again and wait for all file check goroutines done.
+			Then, close copyChannel.
+			*/
+			if !ok {
+				hashChannel = nil
 
-	return filepath.Glob(absGlob)
-}
+				go func() {
+					wgCheckHash.Wait()
+					close(copyChannel)
+				}()
 
-func createSrcDestMap(sourceDirs []string) map[string]string {
-	// Get absolute destination path
-	destPath := viper.GetString("destination.path")
-	absDestPath, err := filepath.Abs(destPath)
-	if err != nil {
-		panic("Cannot get absolute path of destination.path")
-	}
+				continue
+			}
 
-	// Create source destination map
-	var srcDestMap = make(map[string]string)
-	const format = "單元 (%d)"
-	for _, v := range sourceDirs {
-		srcDirName := filepath.Base(v)
-		no := retrieveNo(srcDirName)
-		// 單元 ...
-		destParentDirName := fmt.Sprintf(format, no)
+			/**
+			Whenever a hashPair is arrived, add one to WaitGroup and spawn a goroutine to check if the source and destination files are the same.
+			After that, mark the goroutine done.
+			*/
+			wgCheckHash.Add(1)
 
-		srcDestMap[v] = filepath.Join(absDestPath, destParentDirName, srcDirName)
-	}
+			go func() {
+				defer wgCheckHash.Done()
+				if same := isSameFile(hashPair[0], hashPair[1]); !same {
+					copyChannel <- hashPair
+				}
+			}()
+		case copyPair, ok := <-copyChannel:
+			/**
+			If copyChannel is closed, prevent this case from executing again and wait for all copy goroutines done.
+			Then, close done.
+			*/
+			if !ok {
+				copyChannel = nil
 
-	return srcDestMap
-}
+				go func() {
+					wgCopyFile.Wait()
+					close(done)
+				}()
 
-func retrieveNo(dirName string) int {
-	fullNoStr := strings.Split(dirName, " ")[1]
-	noStr := strings.Split(fullNoStr, ".")[1]
-	if no, err := strconv.Atoi(noStr); err == nil {
-		return no
-	} else {
-		panic(err)
+				continue
+			}
+
+			/**
+			Whenever a copyPair is arrived, add one to WaitGroup and spawn a goroutine to copy file.
+			If an error occurs, push that error to errorChannel.
+			After that, mark the goroutine done.
+			*/
+			wgCopyFile.Add(1)
+
+			go func() {
+				defer wgCopyFile.Done()
+				err := Copy(copyPair[0], copyPair[1])
+				if err != nil {
+					errorChannel <- err
+				}
+			}()
+		// Listen to errorChannel and log fatal error content
+		case err := <-errorChannel:
+			log.Fatalln(err.Error())
+		// Exit function if both check hash and copy file tasks done
+		case <-done:
+			return
+		}
 	}
 }
