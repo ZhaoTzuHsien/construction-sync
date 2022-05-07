@@ -1,0 +1,22 @@
+name: CI
+on:
+  push: {}
+  pull_request: {}
+jobs:
+  build
+  name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18.1
+      - name: Build
+        run: go build github.com/ZhaoTzuHsien/construction-sync/cmd/sync
+      - uses: actions/upload-artifact@v3
+        name: Save userscript as artifact
+        with:
+          name: sync
+          path: sync.exe
