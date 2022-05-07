@@ -5,10 +5,7 @@ on:
 jobs:
   build:
     name: Build
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -22,4 +19,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: sync
-          path: sync*
+          path: sync.exe
