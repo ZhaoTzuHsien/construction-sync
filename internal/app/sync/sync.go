@@ -149,9 +149,6 @@ func Start() {
 		case <-done:
 			bar.Finish()
 			log.Success.Printf("複製 %s 個檔案並跳過 %s 個重複的檔案", colors.HiYellow(copyCount), colors.HiMagenta(hashCount-copyCount))
-
-			// Show program footer
-			log.NoFlag.Println("")
 			return
 		}
 	}
