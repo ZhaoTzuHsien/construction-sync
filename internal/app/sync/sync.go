@@ -2,8 +2,10 @@ package sync
 
 import (
 	"errors"
+	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/colors"
 	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/config"
 	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/log"
+	"github.com/schollz/progressbar/v3"
 	"strings"
 	"sync"
 )
@@ -22,8 +24,8 @@ func Start() {
 		}
 	}()
 
-	config.LoadConfig()
-	log.Success.Println("載入 config.yaml")
+	configFilePath := config.LoadConfig()
+	log.Success.Println("載入", configFilePath)
 
 	sourceDirs, err := getSourceDirs()
 	if err != nil {
@@ -39,6 +41,20 @@ func Start() {
 	progressChannel := make(chan Progress, 100*2*3)
 	errorChannel := make(chan error)
 	done := make(chan struct{})
+
+	// Create task counts
+	hashCount, copyCount := 0, 0
+
+	// Create progress bar
+	log.NoFlag.Println()
+	bar := progressbar.NewOptions(-1,
+		progressbar.OptionClearOnFinish(),
+		progressbar.OptionSetDescription("正在複製檔案..."),
+		progressbar.OptionSetItsString("檔案"),
+		progressbar.OptionShowCount(),
+		progressbar.OptionShowIts(),
+		progressbar.OptionSpinnerType(24),
+	)
 
 	// Discover files
 	discoverFiles(srcDestMap, hashChannel, progressChannel, errorChannel)
@@ -117,12 +133,25 @@ func Start() {
 			}()
 		// Listen to progress channel and update progress
 		case progress := <-progressChannel:
-			log.Success.Println(progress)
+			if progress.action == "finish" {
+				switch progress.task {
+				case "hash":
+					hashCount++
+				case "copy":
+					bar.Add(1)
+					copyCount++
+				}
+			}
 		// Listen to errorChannel and log fatal error content
 		case err := <-errorChannel:
 			log.Fatal.Fatalln(err)
 		// Exit function if both check hash and copy file tasks done
 		case <-done:
+			bar.Finish()
+			log.Success.Printf("複製 %s 個檔案並跳過 %s 個重複的檔案", colors.HiYellow(copyCount), colors.HiMagenta(hashCount-copyCount))
+
+			// Show program footer
+			log.NoFlag.Println("")
 			return
 		}
 	}

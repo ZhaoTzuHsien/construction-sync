@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func LoadConfig() {
+func LoadConfig() string {
 	// Define config paths
 	var configs []string
 	if workDir, err := os.Getwd(); err == nil {
@@ -53,6 +53,8 @@ func LoadConfig() {
 	if len(notFoundKeys) > 0 {
 		panic(errors.New("無法在 config.yaml 中找到 " + strings.Join(notFoundKeys, ", ")))
 	}
+
+	return viper.ConfigFileUsed()
 }
 
 func validate(keys []string) []string {
