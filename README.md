@@ -8,7 +8,7 @@
 
 ### 下載
 
-請點擊此 [連結](https://github.com/ZhaoTzuHsien/construction-sync/releases/latest/download/sync.exe) 或前往 [Releases](releases) 頁面下載最新版本的程式。
+請點擊此 [連結](https://github.com/ZhaoTzuHsien/construction-sync/releases/latest/download/sync.exe) 或前往 [Releases](https://github.com/ZhaoTzuHsien/construction-sync/releases) 頁面下載最新版本的程式。
 
 Windows Defender 有可能會把這個檔案視為病毒，並阻止你下載。
 這是由於這個程式沒有經過簽署，且 Windows Defender 沒見過這個檔案才覺得有問題。
