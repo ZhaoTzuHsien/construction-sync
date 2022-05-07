@@ -50,7 +50,9 @@ func listDir(sourceDir, destinationDir string) ([][2]string, error) {
 
 	var pairs [][2]string
 	for _, v := range entries {
-		pairs = append(pairs, [2]string{filepath.Join(sourceDir, v.Name()), filepath.Join(destinationDir, v.Name())})
+		if !v.IsDir() {
+			pairs = append(pairs, [2]string{filepath.Join(sourceDir, v.Name()), filepath.Join(destinationDir, v.Name())})
+		}
 	}
 
 	return pairs, nil
