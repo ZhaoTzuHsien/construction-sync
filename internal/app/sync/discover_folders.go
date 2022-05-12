@@ -2,6 +2,7 @@ package sync
 
 import (
 	"errors"
+	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/log"
 	"github.com/spf13/viper"
 	"path/filepath"
 )
@@ -17,6 +18,8 @@ func getSourceDirs() ([]string, error) {
 	// Build absolute glob
 	glob := viper.GetString("source.glob")
 	absGlob := filepath.Join(absSourcePath, glob)
+
+	log.Debug.Println("absolute glob:", absGlob)
 
 	return filepath.Glob(absGlob)
 }

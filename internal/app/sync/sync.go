@@ -35,6 +35,13 @@ func Start() {
 	srcDestMap := createSrcDestMap(sourceDirs)
 	log.Success.Println("搜尋資料夾，將從以下路徑搜尋檔案：\n - " + strings.Join(sourceDirs, "\n - "))
 
+	// Debug list source destination map
+	srcDestStr := "source destination map:"
+	for k, v := range srcDestMap {
+		srcDestStr += "\n" + k + "\n-> " + v
+	}
+	log.Debug.Println(srcDestStr)
+
 	// Create channels for discover, hash and copy tasks
 	hashChannel := make(chan [2]string, 100)
 	copyChannel := make(chan [2]string, 100)
@@ -80,6 +87,9 @@ func Start() {
 				continue
 			}
 
+			// Show hash channel debug info
+			log.Debug.Println("hashChannel:\n", hashPair[0], "\n->", hashPair[1])
+
 			/**
 			Whenever a hashPair is arrived, add one to WaitGroup and spawn a goroutine to check if the source and destination files are the same.
 			After that, mark the goroutine done.
@@ -112,6 +122,9 @@ func Start() {
 
 				continue
 			}
+
+			// Show copy channel debug info
+			log.Debug.Println("copyChannel:\n", copyPair[0], "\n->", copyPair[1])
 
 			/**
 			Whenever a copyPair is arrived, add one to WaitGroup and spawn a goroutine to copy file.

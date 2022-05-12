@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/constant"
+	"github.com/ZhaoTzuHsien/construction-sync/internal/pkg/log"
 	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
@@ -31,6 +32,7 @@ func LoadConfig() string {
 
 	// Set Default config
 	viper.SetDefault("source.glob", "???年??月/*/*")
+	viper.SetDefault("debug", false)
 
 	// Read config from local filesystem.
 	// If config is not found, ask user to add config.yaml to valid config path
@@ -53,6 +55,12 @@ func LoadConfig() string {
 	if len(notFoundKeys) > 0 {
 		panic(errors.New("無法在 config.yaml 中找到 " + strings.Join(notFoundKeys, ", ")))
 	}
+
+	// Set Debug logger to Stdin if debug is false
+	if !viper.GetBool("debug") {
+		log.Debug.SetOutput(os.Stdin)
+	}
+	log.Debug.Println("Config: ", viper.AllSettings())
 
 	return viper.ConfigFileUsed()
 }
